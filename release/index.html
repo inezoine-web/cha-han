@@ -3,57 +3,96 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <meta name="theme-color" content="#17120f">
-  <title>cha-han｜鍋振りトレーナー</title>
+  <meta name="theme-color" content="#101518">
+  <title>cha-han｜鍋振り試作機</title>
   <style>
-    :root{color-scheme:dark;font-family:system-ui,"Noto Sans JP",sans-serif;background:#17120f;color:#fff8e8}
-    *{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(circle at 50% 25%,#483122,#17120f 62%);overscroll-behavior:none}
-    main{width:min(100%,480px);min-height:100dvh;margin:auto;padding:20px 18px 28px;display:flex;flex-direction:column;align-items:center}
-    header{text-align:center}h1{font-size:clamp(1.55rem,7vw,2.25rem);margin:.2rem 0}.lead{margin:.25rem 0 1rem;color:#dfcbb4;font-size:.9rem}
-    .panel{width:100%;padding:14px;border:1px solid #6f513b;border-radius:18px;background:#211915cc;box-shadow:0 16px 44px #0007}
-    .meter{display:flex;justify-content:space-between;align-items:end;margin-bottom:7px}.meter strong{font-size:1.45rem}.meter span{color:#dfcbb4;font-size:.85rem}
-    .bar{height:10px;overflow:hidden;border-radius:10px;background:#4c352b}.bar>i{display:block;width:100%;height:100%;background:linear-gradient(90deg,#e34b35,#f2c14e);transition:width .2s}
-    canvas{display:block;width:100%;height:auto;margin:8px 0 2px;border-radius:16px;background:linear-gradient(#15100e,#291c15);touch-action:none}
-    .message{min-height:2.8em;margin:8px 0;color:#f3dfc3;text-align:center;font-size:.9rem}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    button{min-height:50px;border:0;border-radius:13px;background:#d84b2f;color:white;font:700 1rem inherit;box-shadow:0 4px 0 #842a1c;cursor:pointer;touch-action:manipulation}button:active{transform:translateY(3px);box-shadow:0 1px 0 #842a1c}button.secondary{background:#584137;box-shadow:0 4px 0 #2c211d}
-    #sensor{grid-column:1/-1;background:#e06032}.hint{margin:13px 5px 0;color:#bca895;text-align:center;font-size:.76rem;line-height:1.55}.debug{font-variant-numeric:tabular-nums}
+    :root{color-scheme:dark;font-family:system-ui,"Noto Sans JP",sans-serif;background:#101518;color:#edf2f3}
+    *{box-sizing:border-box}body{margin:0;min-height:100dvh;background:#101518;overscroll-behavior:none}
+    main{width:min(100%,480px);min-height:100dvh;margin:auto;padding:18px 16px 26px;display:flex;flex-direction:column;align-items:center}
+    header{width:100%;display:flex;align-items:end;justify-content:space-between;margin-bottom:12px}h1{font-size:1.25rem;letter-spacing:.08em;margin:0}.tag{margin:0;color:#8fa0a6;font-size:.72rem}
+    .panel{width:100%;padding:14px;border:1px solid #3b484d;border-radius:20px;background:#171e21;box-shadow:0 18px 50px #0008}
+    .status{display:flex;justify-content:space-between;gap:8px;margin:0 4px 10px;color:#aab8bc;font-size:.78rem}.status output{color:#e9be72}
+    canvas{display:block;width:100%;height:auto;border:1px solid #435158;border-radius:50%;background:#0b0f11;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
+    .readout{min-height:1.5em;margin:10px 0 12px;text-align:center;color:#aebcc0;font-size:.78rem;font-variant-numeric:tabular-nums}
+    .control{padding:12px;border:1px solid #344147;border-radius:14px;background:#111719}.control label{display:flex;justify-content:space-between;align-items:center;font-size:.88rem}.control output{color:#e9be72;font-weight:700}
+    input[type=range]{width:100%;height:32px;margin:5px 0 0;accent-color:#e9be72}
+    button{width:100%;min-height:54px;margin-top:11px;border:0;border-radius:14px;background:#e0a84e;color:#17130b;font:700 1rem inherit;box-shadow:0 4px 0 #8d6528;cursor:pointer;touch-action:manipulation}button:active{transform:translateY(3px);box-shadow:0 1px 0 #8d6528}
+    .hint{margin:13px 5px 0;color:#829196;text-align:center;font-size:.72rem;line-height:1.55}
     @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   </style>
 </head>
 <body>
 <main>
-  <header><h1>炒飯・鍋振り道場</h1><p class="lead">こぼさず返して、米を守ろう。</p></header>
-  <section class="panel" aria-label="鍋振りシミュレーター">
-    <div class="meter"><strong id="remaining">米の残量 100%</strong><span id="sensorState">センサー未接続</span></div>
-    <div class="bar" aria-hidden="true"><i id="bar"></i></div>
-    <canvas id="scene" width="420" height="320" aria-label="中華鍋と米粒のシミュレーション"></canvas>
-    <p id="message" class="message" aria-live="polite">センサーを有効にするか、左右ボタンで鍋を振ってください。</p>
-    <div class="controls">
-      <button id="left" class="secondary" type="button">← 左へ振る</button>
-      <button id="right" class="secondary" type="button">右へ振る →</button>
-      <button id="sensor" type="button">センサーを有効にする</button>
+  <header><h1>鍋振り試作機</h1><p class="tag">TOP VIEW / 物理テスト</p></header>
+  <section class="panel" aria-label="中華鍋の粒子シミュレーション">
+    <div class="status"><span id="sensorState">センサー停止中</span><output id="riceCount">米 48 / 48</output></div>
+    <canvas id="scene" width="420" height="420" aria-label="上から見た中華鍋と米。ドラッグでも鍋を振れます"></canvas>
+    <p id="readout" class="readout" aria-live="polite">リセットでセンサー取得・水平調整を開始</p>
+    <div class="control">
+      <label for="sensitivity"><span>センサー強度</span><output id="sensitivityValue">1.0×</output></label>
+      <input id="sensitivity" type="range" min="0.2" max="2.5" value="1" step="0.1">
     </div>
-    <p class="hint">PC: ← → キーでも操作できます。<br><span class="debug" id="debug">加速度 x: 0.00 / y: 0.00</span><br>スマートフォンを落とさないよう、周囲を確認してください。</p>
+    <button id="reset" type="button">リセットして計測開始</button>
+    <p class="hint">画面を上にして右手で持ち、水平な状態でリセットしてください。<br>PCでは鍋のドラッグ、または矢印キーで動きを確認できます。<br>端末を落とさないよう周囲を確認してください。</p>
   </section>
 </main>
 <script>
 (() => {
   'use strict';
   const canvas=document.querySelector('#scene'),ctx=canvas.getContext('2d');
-  const remainingEl=document.querySelector('#remaining'),bar=document.querySelector('#bar');
-  const message=document.querySelector('#message'),sensorState=document.querySelector('#sensorState'),debug=document.querySelector('#debug');
-  const TOTAL=60,RIM=174,CX=210,BOTTOM=270; let grains=[],impulse=0,listening=false,last=performance.now();
-  const floorY=x=>BOTTOM-.0047*(x-CX)*(x-CX);
-  function reset(){grains=Array.from({length:TOTAL},()=>({x:CX+(Math.random()-.5)*74,y:230-Math.random()*20,vx:(Math.random()-.5)*.25,vy:0})); update();}
-  function update(){const pct=Math.round(grains.length/TOTAL*100);remainingEl.textContent=`米の残量 ${pct}%`;bar.style.width=`${pct}%`;message.textContent=pct===0?'全部こぼれました。ボタンで再挑戦できます。':pct<70?'こぼれています。小さく素早く返そう。':'短く振って、反対方向で受け止めよう。';}
-  function toss(direction){if(!grains.length)reset(); impulse+=direction*2.8; grains.forEach(g=>{g.vy-=Math.abs(direction)*(.8+Math.random()*.8)});}
-  function motion(event){const a=event.acceleration||event.accelerationIncludingGravity||{};const x=Number.isFinite(a.x)?a.x:0,y=Number.isFinite(a.y)?a.y:0;impulse+=Math.max(-2.2,Math.min(2.2,-x*.075));debug.textContent=`加速度 x: ${x.toFixed(2)} / y: ${y.toFixed(2)}`;}
-  async function enableSensor(){const button=document.querySelector('#sensor');try{if(!('DeviceMotionEvent'in window))throw new Error('このブラウザでは利用できません');if(typeof DeviceMotionEvent.requestPermission==='function'){if(await DeviceMotionEvent.requestPermission()!=='granted')throw new Error('許可されませんでした');}if(!listening){window.addEventListener('devicemotion',motion,{passive:true});listening=true;}sensorState.textContent='センサー接続済み';button.textContent='米をセットし直す';reset();}catch(error){sensorState.textContent='センサー利用不可';message.textContent=`${error.message}。左右ボタンで試せます。`;}}
-  function drawWok(){ctx.strokeStyle='#9c7963';ctx.lineWidth=10;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(CX-RIM,floorY(CX-RIM));ctx.quadraticCurveTo(CX,BOTTOM+12,CX+RIM,floorY(CX+RIM));ctx.stroke();ctx.strokeStyle='#4c352b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(CX+RIM-2,floorY(CX+RIM));ctx.lineTo(414,76);ctx.stroke();}
-  function frame(now){const dt=Math.min(2,(now-last)/16.67);last=now;ctx.clearRect(0,0,canvas.width,canvas.height);drawWok();const kept=[];for(const g of grains){g.vx+=(impulse*.105)*dt;g.vy+=.18*dt;g.x+=g.vx*dt;g.y+=g.vy*dt;const floor=floorY(g.x);if(Math.abs(g.x-CX)<RIM&&g.y>floor){g.y=floor;g.vy*=-.25;const slope=-.0094*(g.x-CX);g.vx+=slope*.32;g.vx*=.91;}if(g.x>-8&&g.x<428&&g.y<330){kept.push(g);ctx.fillStyle='#fff0bd';ctx.beginPath();ctx.ellipse(g.x,g.y,4,2.2,g.vx*.12,0,Math.PI*2);ctx.fill();}}if(kept.length!==grains.length){grains=kept;update();}impulse*=Math.pow(.78,dt);requestAnimationFrame(frame);}
-  document.querySelector('#left').addEventListener('click',()=>toss(-1));document.querySelector('#right').addEventListener('click',()=>toss(1));document.querySelector('#sensor').addEventListener('click',enableSensor);
-  window.addEventListener('keydown',event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();toss(event.key==='ArrowLeft'?-1:1);}});
-  reset();requestAnimationFrame(frame);
+  const stateEl=document.querySelector('#sensorState'),countEl=document.querySelector('#riceCount'),readout=document.querySelector('#readout');
+  const sensitivity=document.querySelector('#sensitivity'),sensitivityValue=document.querySelector('#sensitivityValue');
+  const TOTAL=48,CX=210,CY=210,RIM=176,DEPTH=72;
+  let grains=[],drive={x:0,y:0,z:0},listening=false,baseline=null,last=performance.now(),pointer=null;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const bowlHeight=(x,y)=>-DEPTH*(1-Math.min(1,(x*x+y*y)/(RIM*RIM)));
+  function seedRice(){
+    grains=Array.from({length:TOTAL},(_,i)=>{const angle=i*2.4+Math.random()*.5,r=14+Math.sqrt(Math.random())*43;const x=Math.cos(angle)*r,y=Math.sin(angle)*r;return{x,y,z:bowlHeight(x,y)+2,vx:0,vy:0,vz:0};});
+    countEl.value=`米 ${TOTAL} / ${TOTAL}`;
+  }
+  function calibrate(sample){baseline={x:sample.x,y:sample.y,z:sample.z};stateEl.textContent='水平調整済み';readout.textContent='計測中 — スマホを短く振ってください';}
+  function motion(event){
+    const raw=event.accelerationIncludingGravity||event.acceleration;if(!raw)return;
+    const sample={x:raw.x||0,y:raw.y||0,z:raw.z||0};if(!baseline){calibrate(sample);return;}
+    const gain=Number(sensitivity.value),dt=clamp((event.interval||16)/16,0.5,3);
+    drive.x=clamp(drive.x-(sample.x-baseline.x)*.085*gain*dt,-4.5,4.5);
+    drive.y=clamp(drive.y+(sample.y-baseline.y)*.085*gain*dt,-4.5,4.5);
+    drive.z=clamp(drive.z+Math.abs(sample.z-baseline.z)*.035*gain*dt,0,2.5);
+    readout.textContent=`入力 x ${drive.x.toFixed(2)} / y ${drive.y.toFixed(2)}`;
+  }
+  async function reset(){
+    seedRice();drive={x:0,y:0,z:0};baseline=null;readout.textContent='水平のまま少し待ってください…';
+    try{
+      if(!('DeviceMotionEvent' in window))throw new Error('この端末ではセンサーを利用できません');
+      if(typeof DeviceMotionEvent.requestPermission==='function'&&await DeviceMotionEvent.requestPermission()!=='granted')throw new Error('センサーが許可されませんでした');
+      if(!listening){window.addEventListener('devicemotion',motion,{passive:true});listening=true;}
+      stateEl.textContent='水平調整待ち';setTimeout(()=>{if(!baseline)readout.textContent='センサー入力待ち — ドラッグでも試せます';},700);
+    }catch(error){stateEl.textContent='ポインター操作';readout.textContent=`${error.message}。鍋をドラッグしてください。`;}
+  }
+  function applyDrive(dx,dy,power=1){const gain=Number(sensitivity.value);drive.x=clamp(drive.x+dx*.055*gain*power,-5,5);drive.y=clamp(drive.y+dy*.055*gain*power,-5,5);drive.z=clamp(drive.z+(Math.abs(dx)+Math.abs(dy))*.006*gain,0,2.8);}
+  function drawWok(){
+    const grad=ctx.createRadialGradient(CX,CY,8,CX,CY,RIM);grad.addColorStop(0,'#10181b');grad.addColorStop(.72,'#202b2f');grad.addColorStop(1,'#536168');ctx.fillStyle=grad;ctx.beginPath();ctx.arc(CX,CY,RIM,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#718087';ctx.lineWidth=3;ctx.stroke();ctx.strokeStyle='#344248';ctx.lineWidth=1;
+    for(const r of [44,88,132]){ctx.beginPath();ctx.arc(CX,CY,r,0,Math.PI*2);ctx.stroke();}
+    ctx.beginPath();ctx.moveTo(CX-RIM,CY);ctx.lineTo(CX+RIM,CY);ctx.moveTo(CX,CY-RIM);ctx.lineTo(CX,CY+RIM);ctx.stroke();
+  }
+  function frame(now){
+    const dt=Math.min(2,(now-last)/16.67);last=now;ctx.clearRect(0,0,420,420);drawWok();let kept=0;
+    for(const g of grains){
+      if(g.lost)continue;g.vx+=drive.x*.12*dt;g.vy+=drive.y*.12*dt;g.vz+=(drive.z*.11-.19)*dt;g.x+=g.vx*dt;g.y+=g.vy*dt;g.z+=g.vz*dt;
+      const floor=bowlHeight(g.x,g.y),rad=Math.hypot(g.x,g.y);
+      if(rad<RIM&&g.z<=floor+2){g.z=floor+2;if(g.vz<0)g.vz*=-.18;g.vx+=(-g.x/RIM)*.115*dt;g.vy+=(-g.y/RIM)*.115*dt;g.vx*=Math.pow(.974,dt);g.vy*=Math.pow(.974,dt);}
+      if(rad>RIM+18&&g.z>0){g.lost=true;continue;}if(rad>RIM+45||g.z<-90){g.lost=true;continue;}kept++;
+      const height=Math.max(0,g.z-floor),scale=1+Math.min(.7,height/95);ctx.fillStyle=`rgba(0,0,0,${.3-height/450})`;ctx.beginPath();ctx.ellipse(CX+g.x+height*.1,CY+g.y+height*.12,5*scale,2.8*scale,Math.atan2(g.vy,g.vx),0,Math.PI*2);ctx.fill();ctx.fillStyle=height>8?'#fff4c7':'#eadba8';ctx.beginPath();ctx.ellipse(CX+g.x,CY+g.y,4.4*scale,2.2*scale,Math.atan2(g.vy,g.vx),0,Math.PI*2);ctx.fill();
+    }
+    countEl.value=`米 ${kept} / ${TOTAL}`;drive.x*=Math.pow(.84,dt);drive.y*=Math.pow(.84,dt);drive.z*=Math.pow(.72,dt);requestAnimationFrame(frame);
+  }
+  canvas.addEventListener('pointerdown',e=>{pointer={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('pointermove',e=>{if(!pointer)return;applyDrive(e.clientX-pointer.x,e.clientY-pointer.y);pointer={x:e.clientX,y:e.clientY};});
+  canvas.addEventListener('pointerup',()=>{pointer=null;});canvas.addEventListener('pointercancel',()=>{pointer=null;});
+  window.addEventListener('keydown',e=>{const d={ArrowLeft:[-18,0],ArrowRight:[18,0],ArrowUp:[0,-18],ArrowDown:[0,18]}[e.key];if(d){e.preventDefault();applyDrive(...d,1.8);}});
+  sensitivity.addEventListener('input',()=>{sensitivityValue.value=`${Number(sensitivity.value).toFixed(1)}×`;});document.querySelector('#reset').addEventListener('click',reset);
+  seedRice();requestAnimationFrame(frame);
 })();
 </script>
 </body>
