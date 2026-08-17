@@ -39,9 +39,9 @@
 (()=>{'use strict';
   const canvas=document.querySelector('#scene'),ctx=canvas.getContext('2d'),stateEl=document.querySelector('#sensorState'),countEl=document.querySelector('#riceCount'),readout=document.querySelector('#readout');
   const sliders=[...document.querySelectorAll('input[type=range]')],p=Object.fromEntries(sliders.map(e=>[e.id,()=>Number(e.value)]));
-  const TOTAL=36,RIM=188,BASE_Y=294,G=0.115;let grains=[],wok={x:0,vx:0,ax:0,az:0},pointer=null,last=performance.now(),baseline=null,listening=false,demoStart=0,lastPointerTime=0;
+  const TOTAL=36,RIM=188,BOTTOM_Y=294,G=0.115;let grains=[],wok={x:0,vx:0,ax:0,az:0},pointer=null,last=performance.now(),baseline=null,listening=false,demoStart=0,lastPointerTime=0;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rand=(i)=>{const x=Math.sin(i*91.73+4.1)*43758.5453;return x-Math.floor(x);};
-  const floorAt=x=>BASE_Y-p.depth()*(1-(x/RIM)**2),slopeAt=x=>2*p.depth()*x/(RIM*RIM);
+  const floorAt=x=>BOTTOM_Y-p.depth()*(x/RIM)**2,slopeAt=x=>-2*p.depth()*x/(RIM*RIM);
   function updateLabels(){for(const e of sliders){const digits=e.step.includes('.')?(e.step.split('.')[1]||'').length:0;e.previousElementSibling.querySelector('output').value=Number(e.value).toFixed(Math.min(2,digits))+(e.dataset.unit||'');}}
   function seed(){wok={x:0,vx:0,ax:0,az:0};grains=Array.from({length:TOTAL},(_,i)=>{const x=(rand(i)-.5)*78;return{x,z:floorAt(x)-4,vx:0,vz:0,state:'STUCK',lost:false,variation:(rand(i+60)-.5)*2};});updateStatus();}
   function updateStatus(){const n={STUCK:0,SLIDING:0,AIRBORNE:0};for(const g of grains)if(!g.lost)n[g.state]++;countEl.value=`固着 ${n.STUCK} · 滑走 ${n.SLIDING} · 飛翔 ${n.AIRBORNE}`;}
@@ -61,8 +61,8 @@
     wok.ax*=Math.pow(.72,dt);wok.az*=Math.pow(.65,dt);wok.vx*=Math.pow(.94,dt);
   }
   function draw(){ctx.clearRect(0,0,520,360);const cx=260+wok.x;ctx.fillStyle='#11191c';ctx.fillRect(0,0,520,360);ctx.strokeStyle='#273338';ctx.lineWidth=1;for(let y=60;y<320;y+=52){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(520,y);ctx.stroke();}
-    ctx.fillStyle='#202b2f';ctx.strokeStyle='#718087';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(cx-RIM,BASE_Y);for(let x=-RIM;x<=RIM;x+=5)ctx.lineTo(cx+x,floorAt(x));ctx.lineTo(cx+RIM,BASE_Y+13);ctx.lineTo(cx-RIM,BASE_Y+13);ctx.closePath();ctx.fill();ctx.stroke();
-    ctx.fillStyle='#8a989d';ctx.fillRect(cx+RIM-2,BASE_Y-1,73,7);ctx.fillStyle='#c39448';ctx.fillRect(cx+RIM+57,BASE_Y-4,42,13);
+    ctx.fillStyle='#202b2f';ctx.strokeStyle='#718087';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(cx-RIM,floorAt(-RIM));for(let x=-RIM;x<=RIM;x+=5)ctx.lineTo(cx+x,floorAt(x));for(let x=RIM;x>=-RIM;x-=5)ctx.lineTo(cx+x,floorAt(x)+10);ctx.closePath();ctx.fill();ctx.stroke();
+    const rimY=floorAt(RIM);ctx.fillStyle='#8a989d';ctx.fillRect(cx+RIM-2,rimY-1,73,7);ctx.fillStyle='#c39448';ctx.fillRect(cx+RIM+57,rimY-4,42,13);
     for(const g of grains){if(g.lost)continue;const color={STUCK:'#e6d49c',SLIDING:'#f1b85e',AIRBORNE:'#fff1ba'}[g.state];ctx.save();ctx.translate(260+g.x,g.z);ctx.rotate(Math.atan2(g.vz,g.vx||.01));ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(2,3,5,2.5,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(0,0,5,2.3,0,0,Math.PI*2);ctx.fill();ctx.restore();}
     ctx.font='11px system-ui';ctx.fillStyle='#829196';ctx.fillText('← 身体側',14,25);ctx.fillText('前方 →',457,25);ctx.fillStyle='#e9b25a';ctx.fillRect(15,42,8,8);ctx.fillStyle='#9dacb0';ctx.fillText('滑走',28,50);ctx.fillStyle='#fff1ba';ctx.fillRect(72,42,8,8);ctx.fillStyle='#9dacb0';ctx.fillText('飛翔',85,50);
   }
