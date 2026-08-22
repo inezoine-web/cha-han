@@ -19,3 +19,4 @@ Ko & Hu, “The physics of tossing fried rice” (2020), DOI `10.1098/rsif.2019.
 ランダム探索は周波数を `f = 3 Hz`、付着抵抗を `a = 1 m/s²` に固定し、振幅 `A1, A2` と位相差 `φ` を振る。約85%の離床参加、離床に対する回収率、約16 cmの低い飛翔、約0.62 radの鍋内角移動、3周期すべてでの離床継続を、人が感じたチャーハンらしさの暫定代理指標として採点する。この「リアル度」は物性の同定値ではなく、目視評価と実測によって更新する探索用ヒューリスティックである。
 
 目視で「3回とも安定して舞い、前後が入れ替わる」と選んだ13軌道の記録と初期分析は [`selected-trajectories-analysis.md`](selected-trajectories-analysis.md) にまとめた。
+同文書の追試では [`analyze-order.mjs`](analyze-order.mjs) で離床角と着床角のペア順序反転率を再現できる。
