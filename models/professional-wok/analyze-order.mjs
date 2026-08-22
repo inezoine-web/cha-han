@@ -7,6 +7,7 @@ const DT = 0.002;
 const FREQUENCY = 3;
 const RESISTANCE = 1;
 const CYCLES = 3;
+const GRAINS = 21;
 const RADIUS = 0.20;
 const HALF_ANGLE = 1.2;
 
@@ -40,13 +41,13 @@ function kinematics(t, v, zeta = 0) {
   };
 }
 
-function simulate(v) {
-  const sites = Array.from({length: 21}, (_, id) => ({
+function simulate(v, cycles = CYCLES) {
+  const sites = Array.from({length: GRAINS}, (_, id) => ({
     id, z: -HALF_ANGLE + id * HALF_ANGLE / 10, state: 'ON_WOK', armed: false,
     x: 0, y: 0, vx: 0, vy: 0, take: 0, event: null,
   }));
   const events = [];
-  const duration = (CYCLES + 0.2) / FREQUENCY;
+  const duration = (cycles + 0.2) / FREQUENCY;
   for (let t = 0; t <= duration; t += DT) {
     const centre = kinematics(t, v);
     for (const rice of sites) {
@@ -55,10 +56,10 @@ function simulate(v) {
         const nx = -Math.sin(k.q2 + rice.z), ny = Math.cos(k.q2 + rice.z);
         const separation = -k.ax * nx + (-9.81 - k.ay) * ny;
         if (separation <= RESISTANCE) rice.armed = true;
-        if (rice.armed && separation > RESISTANCE && t < CYCLES / FREQUENCY) {
+        if (rice.armed && separation > RESISTANCE && t < cycles / FREQUENCY) {
           rice.state = 'AIRBORNE'; rice.armed = false; rice.take = t;
           rice.x = k.x; rice.y = k.y; rice.vx = k.vx; rice.vy = k.vy;
-          rice.event = {id: rice.id, cycle: Math.min(CYCLES - 1, Math.floor(t * FREQUENCY)), takeoff: rice.z};
+          rice.event = {id: rice.id, cycle: Math.min(cycles - 1, Math.floor(t * FREQUENCY)), takeoff: rice.z};
         } else { rice.x = k.x; rice.y = k.y; }
       } else if (rice.state === 'AIRBORNE') {
         rice.vy -= 9.81 * DT; rice.x += rice.vx * DT; rice.y += rice.vy * DT;
@@ -73,7 +74,7 @@ function simulate(v) {
       }
     }
   }
-  return events;
+  return {events, sites};
 }
 
 function orderMetric(events) {
@@ -93,10 +94,14 @@ function orderMetric(events) {
     totalDistance += distance;
     if (before * after < 0) { reversed++; reversedDistance += distance; }
   }
+  const rate = pairs ? reversed / pairs : 0;
+  const distanceRate = totalDistance ? reversedDistance / totalDistance : 0;
+  const comparable = new Set(events.map(event => event.id)).size / GRAINS;
+  const fit = Math.min(1, 0.3 * rate / 0.4 + 0.7 * distanceRate / 0.3);
   return {
-    caught: events.length, reversed, pairs, rate: pairs ? reversed / pairs : null,
-    reversedDistance, totalDistance,
-    distanceRate: totalDistance ? reversedDistance / totalDistance : null,
+    caught: events.length, reversed, pairs, rate: pairs ? rate : null,
+    reversedDistance, totalDistance, comparable, effective: fit * comparable,
+    distanceRate: totalDistance ? distanceRate : null,
   };
 }
 
@@ -113,7 +118,7 @@ if (Math.abs(neighbourExample.distanceRate - 5 / 165) > 1e-12 || reversalExample
 }
 
 const results = selected.map(v => {
-  const events = simulate(v);
+  const {events} = simulate(v);
   const cycles = Array.from({length: CYCLES}, (_, cycle) => orderMetric(events.filter(e => e.cycle === cycle)));
   const reversed = cycles.reduce((sum, metric) => sum + metric.reversed, 0);
   const pairs = cycles.reduce((sum, metric) => sum + metric.pairs, 0);
@@ -125,7 +130,22 @@ const results = selected.map(v => {
   }};
 });
 
-if (process.argv.includes('--examples')) {
+if (process.argv.includes('--long-run')) {
+  const cycles = 20;
+  console.log('rank\tactive after 20\tfinal mean/span\tper-cycle caught/effective shuffle');
+  for (const v of selected) {
+    const {events, sites} = simulate(v, cycles);
+    const active = sites.filter(site => site.state !== 'LOST');
+    const positions = active.map(site => site.z);
+    const span = positions.length > 1 ? Math.max(...positions) - Math.min(...positions) : 0;
+    const mean = positions.reduce((sum, position) => sum + position, 0) / Math.max(1, positions.length);
+    const cycleText = Array.from({length: cycles}, (_, cycle) => {
+      const metric = orderMetric(events.filter(event => event.cycle === cycle));
+      return `${metric.caught}/${(100 * metric.effective).toFixed(0)}%`;
+    }).join(' ');
+    console.log(`${v.rank}\t${active.length}/${GRAINS}\t${mean.toFixed(3)}/${span.toFixed(3)} rad\t${cycleText}`);
+  }
+} else if (process.argv.includes('--examples')) {
   console.log(`1032547698: ${(100 * neighbourExample.distanceRate).toFixed(1)}%`);
   console.log(`9876543210: ${(100 * reversalExample.distanceRate).toFixed(1)}%`);
 } else if (process.argv.includes('--json')) console.log(JSON.stringify(results, null, 2));
